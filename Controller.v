@@ -11,7 +11,7 @@ module Controller (
    localparam DONE      = 3'b101;
    localparam SYSRESET  = 3'b100;
 
-   always @(posedge clk) begin
+   always @(posedge clk or negedge reset_b) begin
       if (!reset_b) begin
          cState <= SYSRESET;
       end

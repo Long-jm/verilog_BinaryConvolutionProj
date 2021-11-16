@@ -84,7 +84,7 @@ module top_tb();
           .write_enable ( dut_sram_write_enable  ),
           .write_address( dut_sram_write_address ),
           .write_data   ( dut_sram_write_data    ), 
-          .read_address ( 12'bx  ),
+          .read_address ( 12'b0  ),
           .read_data    (      ),
 	  .reset        ( reset_b				 ),
           .clock        ( clk                    )
