@@ -1,35 +1,20 @@
 module Controller (
    input reset_b, clk, go,
-   output reg [2:0] cState );
+   output busy, dut_sram_write_enable
+   );
 
-   localparam WAIT      = 3'b000;
-   localparam READMEM   = 3'b001;
-   localparam XNORS     = 3'b011;
-   localparam COUNT1S   = 3'b010;
-   localparam OUTPUTS   = 3'b110;
-   localparam WRITEMEM  = 3'b111;
-   localparam DONE      = 3'b101;
-   localparam SYSRESET  = 3'b100;
+   reg busy_reg, sram_we_reg;
 
-   always @(posedge clk or negedge reset_b) begin
-      if (!reset_b) begin
-         cState <= SYSRESET;
-      end
-      else begin
-         casex (cState)
-            WAIT: begin
-               if (go) cState <= READMEM;
-               else cState <= WAIT; 
-            end
-            READMEM: cState <= XNORS; 
-            XNORS: cState <= COUNT1S;
-            COUNT1S: cState <= OUTPUTS;
-            OUTPUTS: cState <= WRITEMEM;
-            WRITEMEM: cState <= DONE;
-            DONE: cState <= WAIT;
-            SYSRESET: cState <= WAIT;
-            default: cState <= cState;
-         endcase
+   assign busy = busy_reg;
+   assign dut_sram_write_enable = sram_we_reg;
+
+   always @(posedge clk) begin
+      if (busy_reg || sram_we_reg || !reset_b) begin
+         busy_reg = 1'b0;
+         sram_we_reg = 1'b0; end
+      else if (go) begin
+         busy_reg = 1'b1;
+         sram_we_reg = 1'b1;
       end
    end
 

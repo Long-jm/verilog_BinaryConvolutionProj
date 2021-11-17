@@ -1,95 +1,32 @@
 
 module Datapath (
-   input reg [2:0] cState,
-   input reg [15:0] sram_dut_read_data, wmem_dut_read_data,
-   output reg busy, dut_sram_write_enable,
-   output reg [11:0] dut_sram_read_address = 0, dut_sram_write_address = 0, dut_wmem_read_address = 0,
-   output reg [15:0] dut_sram_write_data
+   input [15:0] sram_dut_read_data, wmem_dut_read_data,
+   output [11:0] dut_sram_read_address, dut_sram_write_address, dut_wmem_read_address,
+   output [15:0] dut_sram_write_data
    );
- 
-   localparam YES       = 1'b1;
-   localparam RESET     = 1'b0;
 
-   localparam WAIT      = 3'b000;
-   localparam READMEM   = 3'b001;
-   localparam XNORS     = 3'b011;
-   localparam COUNT1S   = 3'b010;
-   localparam OUTPUTS   = 3'b110;
-   localparam WRITEMEM  = 3'b111;
-   localparam DONE      = 3'b101;
-   localparam SYSRESET  = 3'b100;
+   wire [3:0] outputMatrix;
+   wire [8:0] xnorOut0, xnorOut1, xnorOut2, xnorOut3;
+   wire [4:0] onesCount0, onesCount1, onesCount2, onesCount3;
 
-   reg [15:0] weightMatrix, inputMatrix; 
-   reg [3:0] outputMatrix;
-   reg [8:0] xnorOut0, xnorOut1, xnorOut2, xnorOut3;
-   reg [4:0] onesCount0, onesCount1, onesCount2, onesCount3;
+   assign dut_sram_read_address = 0;
+   assign dut_sram_write_address = 0;
+   assign dut_wmem_read_address = 0;
+   assign dut_sram_write_data = outputMatrix;
 
-   integer i;
+   assign xnorOut0 = ~( wmem_dut_read_data[8:0] ^ { sram_dut_read_data[10:8], sram_dut_read_data[6:4], sram_dut_read_data[2:0] } );   // Top left
+   assign xnorOut1 = ~( wmem_dut_read_data[8:0] ^ { sram_dut_read_data[11:9], sram_dut_read_data[7:5], sram_dut_read_data[3:1] } );   // Top right
+   assign xnorOut2 = ~( wmem_dut_read_data[8:0] ^ { sram_dut_read_data[14:12], sram_dut_read_data[10:8], sram_dut_read_data[6:4] } ); // Lower left
+   assign xnorOut3 = ~( wmem_dut_read_data[8:0] ^ { sram_dut_read_data[15:13], sram_dut_read_data[11:9], sram_dut_read_data[7:5] } ); // Lower right
 
-   always @(*) begin
-      casex (cState)
-      READMEM: begin
-         busy = YES;
-         // perform SRAM read here
-         inputMatrix = sram_dut_read_data;
-         weightMatrix = wmem_dut_read_data;
+   assign onesCount0 = ( xnorOut0[0] + xnorOut0[1] + xnorOut0[2] + xnorOut0[3] + xnorOut0[4] + xnorOut0[5] + xnorOut0[6] + xnorOut0[7] + xnorOut0[8] );
+   assign onesCount1 = ( xnorOut1[0] + xnorOut1[1] + xnorOut1[2] + xnorOut1[3] + xnorOut1[4] + xnorOut1[5] + xnorOut1[6] + xnorOut1[7] + xnorOut1[8] );
+   assign onesCount2 = ( xnorOut2[0] + xnorOut2[1] + xnorOut2[2] + xnorOut2[3] + xnorOut2[4] + xnorOut2[5] + xnorOut2[6] + xnorOut2[7] + xnorOut2[8] );
+   assign onesCount3 = ( xnorOut3[0] + xnorOut3[1] + xnorOut3[2] + xnorOut3[3] + xnorOut3[4] + xnorOut3[5] + xnorOut3[6] + xnorOut3[7] + xnorOut3[8] );
 
-         onesCount0 = RESET;
-         onesCount1 = RESET;
-         onesCount2 = RESET;
-         onesCount3 = RESET;
-      end
-      XNORS: begin
-         xnorOut0 = ~( weightMatrix[8:0] ^ { inputMatrix[10:8], inputMatrix[6:4], inputMatrix[2:0] } );   // Top left
-         xnorOut1 = ~( weightMatrix[8:0] ^ { inputMatrix[11:9], inputMatrix[7:5], inputMatrix[3:1] } );   // Top right
-         xnorOut2 = ~( weightMatrix[8:0] ^ { inputMatrix[14:12], inputMatrix[10:8], inputMatrix[6:4] } ); // Lower left
-         xnorOut3 = ~( weightMatrix[8:0] ^ { inputMatrix[15:13], inputMatrix[11:9], inputMatrix[7:5] } ); // Lower right
-      end
-      COUNT1S: begin
-         for (i=0; i<9; i=i+1) begin
-            if ( xnorOut0[i] ) onesCount0 = onesCount0 + 1'b1;
-            else onesCount0 = onesCount0;
-            if ( xnorOut1[i] ) onesCount1 = onesCount1 + 1'b1;
-            else onesCount1 = onesCount1;
-            if ( xnorOut2[i] ) onesCount2 = onesCount2 + 1'b1;
-            else onesCount2 = onesCount2;
-            if ( xnorOut3[i] ) onesCount3 = onesCount3 + 1'b1;
-            else onesCount3 = onesCount3;
-         end
-      end
-      OUTPUTS: begin
-         if ((onesCount0 == 5) || (onesCount0 == 6) || (onesCount0 == 7) || (onesCount0 == 8) || (onesCount0 == 9))
-            outputMatrix[0] = 1;
-         else outputMatrix[0] = 0;
-         if ((onesCount1 == 5) || (onesCount1 == 6) || (onesCount1 == 7) || (onesCount1 == 8) || (onesCount1 == 9))
-            outputMatrix[1] = 1;
-         else outputMatrix[1] = 0;
-         if ((onesCount2 == 5) || (onesCount2 == 6) || (onesCount2 == 7) || (onesCount2 == 8) || (onesCount2 == 9))
-            outputMatrix[2] = 1;
-         else outputMatrix[2] = 0;
-         if ((onesCount3 == 5) || (onesCount3 == 6) || (onesCount3 == 7) || (onesCount3 == 8) || (onesCount3 == 9))
-            outputMatrix[3] = 1;
-         else outputMatrix[3] = 0;
-      end
-      WRITEMEM: begin
-         // write outputMatrix to SRAM
-         dut_sram_write_data = outputMatrix;
-         dut_sram_write_enable = YES;
-      end
-      DONE: begin
-         busy = RESET;
-         dut_sram_write_enable = RESET;
-         dut_sram_write_address = dut_sram_write_address + 1;
-         dut_sram_read_address = dut_sram_read_address + 1;  
-         dut_wmem_read_address = dut_wmem_read_address + 1;
-      end
-      SYSRESET: begin
-         busy = RESET;
-         dut_sram_read_address = 0; 
-         dut_sram_write_address = 0; 
-         dut_wmem_read_address = 0;
-      end
-      endcase
-   end
+   assign outputMatrix[0] = ( (onesCount0 == 5) || (onesCount0 == 6) || (onesCount0 == 7) || (onesCount0 == 8) || (onesCount0 == 9) );
+   assign outputMatrix[1] = ( (onesCount1 == 5) || (onesCount1 == 6) || (onesCount1 == 7) || (onesCount1 == 8) || (onesCount1 == 9) );
+   assign outputMatrix[2] = ( (onesCount2 == 5) || (onesCount2 == 6) || (onesCount2 == 7) || (onesCount2 == 8) || (onesCount2 == 9) );
+   assign outputMatrix[3] = ( (onesCount3 == 5) || (onesCount3 == 6) || (onesCount3 == 7) || (onesCount3 == 8) || (onesCount3 == 9) );
    
 endmodule
