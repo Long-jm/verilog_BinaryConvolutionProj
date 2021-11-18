@@ -1,0 +1,7 @@
+
+area = 296.323997
+number of cycles = 2
+clock period = 3
+performance = 296.323997 x 2 x 3 = 1777.943982 
+
+1/1777.943982 = 0.00056244
