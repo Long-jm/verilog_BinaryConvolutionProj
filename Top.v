@@ -15,6 +15,8 @@ module MyDesign (
    );
    
    Datapath data_inst (
+      .clk(clk),
+      .reset_b(reset_b),
       .dut_sram_read_address(dut_sram_read_address),
       .dut_sram_write_address(dut_sram_write_address),
       .dut_wmem_read_address(dut_wmem_read_address),

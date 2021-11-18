@@ -1,18 +1,21 @@
 
 module Datapath (
+   input clk, reset_b,
    input [15:0] sram_dut_read_data, wmem_dut_read_data,
    output [11:0] dut_sram_read_address, dut_sram_write_address, dut_wmem_read_address,
    output [15:0] dut_sram_write_data
    );
 
+   reg [11:0] sram_read_address, sram_write_address, wmem_read_address;
+   reg [15:0] sram_write_data;
    wire [3:0] outputMatrix;
    wire [8:0] xnorOut0, xnorOut1, xnorOut2, xnorOut3;
    wire [4:0] onesCount0, onesCount1, onesCount2, onesCount3;
 
-   assign dut_sram_read_address = 0;
-   assign dut_sram_write_address = 0;
-   assign dut_wmem_read_address = 0;
-   assign dut_sram_write_data = outputMatrix;
+   assign dut_sram_read_address = sram_read_address;
+   assign dut_sram_write_address = sram_write_address;
+   assign dut_wmem_read_address = wmem_read_address;
+   assign dut_sram_write_data = sram_write_data;
 
    assign xnorOut0 = ~( wmem_dut_read_data[8:0] ^ { sram_dut_read_data[10:8], sram_dut_read_data[6:4], sram_dut_read_data[2:0] } );   // Top left
    assign xnorOut1 = ~( wmem_dut_read_data[8:0] ^ { sram_dut_read_data[11:9], sram_dut_read_data[7:5], sram_dut_read_data[3:1] } );   // Top right
@@ -29,4 +32,18 @@ module Datapath (
    assign outputMatrix[2] = ( (onesCount2 == 5) || (onesCount2 == 6) || (onesCount2 == 7) || (onesCount2 == 8) || (onesCount2 == 9) );
    assign outputMatrix[3] = ( (onesCount3 == 5) || (onesCount3 == 6) || (onesCount3 == 7) || (onesCount3 == 8) || (onesCount3 == 9) );
    
+   always @(posedge clk) begin
+      if (!reset_b) begin
+         sram_read_address <= 0;
+         sram_write_address <= 0;
+         wmem_read_address <= 0; 
+         sram_write_data <= 0; end
+      else begin
+         sram_read_address <= sram_read_address;
+         sram_write_address <= sram_write_address;
+         wmem_read_address <= wmem_read_address;
+         sram_write_data <= outputMatrix;
+      end
+   end
+
 endmodule
