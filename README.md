@@ -1,7 +1,7 @@
 # verilog_BinaryConvolutionProj
 
 Verilog project that implements a binary convolution theoretically as part of a neural network.
-Project was simulated with Modelsim2019.2 and synthysized with Synopsys2019.
+Project was simulated with Modelsim2019.2 and synthesized with Synopsys2019.
 
 Abstract:
 Researchers discovered that neural networks can be trained so that weights and inputs
